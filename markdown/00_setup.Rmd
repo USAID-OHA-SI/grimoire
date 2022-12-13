@@ -1,0 +1,20 @@
+---
+title: "Grimoire Setup"
+author: "Tim Essam | SI"
+date: "3/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Setup for all files
+library(tidyverse)
+library(gophr)
+library(glamr)
+library(glitr)
+library(reticulate)
+
+merdata <- si_path("path_msd")
+msd <- return_latest(folderpath = merdata, pattern = "OU_IM")
+df <- read_msd(msd)
+```
+

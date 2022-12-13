@@ -1,0 +1,56 @@
+---
+title: "Deriving Viral Load Suppression & Coverage"
+author: "Tim Essam | SI"
+date: "3/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# TODO: FIX SO THIS RUNs Automatically
+source("../Scripts/00_setup.R", local = knitr::knit_global())
+
+
+```
+
+## Viral Load Suppression
+
+Estimates the percentage of people who test HIV positive and are linked to treatment.
+
+$$
+Viral\space Load\space Suppression = \frac{TX\_PVLS\_N}{TX\_PVLS\_D}
+$$
+
+$
+
+Code example
+
+```{r filter testing}
+df_lp <- df %>% 
+  filter(indicator %in% c("TX_PVLS"),
+
+head(df_lp, n = 10)
+```
+
+Code example across quarters by male/female
+
+```{r linkage proxy disaggs}
+# Create a helper function to weed out cases where denominator is missing or 0
+safe_divide <- function(x, y){
+  ifelse(!is.na(y) | y > 0, x / y, NA_real_)
+}  
+
+df_lp_disagg <- 
+  df %>% 
+  filter(indicator %in% c("HTS_TST_POS", "TX_NEW"),
+         standardizeddisaggregate %in% c("Modality/Age/Sex/Result",
+                                         "Age/Sex/HIVStatus")) %>% 
+  group_by(operatingunit, fiscal_year, indicator, sex, trendscoarse) %>% 
+  summarise(across(matches("qtr"), sum, na.rm = T)) %>% 
+  ungroup() %>% 
+  reshape_msd() %>% 
+  pivot_wider(names_from = indicator, values_from = value) %>% 
+  mutate(linkage_proxy = safe_divide(TX_NEW, HTS_TST_POS))
+
+df_lp_disagg %>% select(operatingunit, period, sex, trendscoarse, TX_NEW, HTS_TST_POS, linkage_proxy) %>% head()
+```

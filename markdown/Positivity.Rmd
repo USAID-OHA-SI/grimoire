@@ -1,0 +1,59 @@
+---
+title: "Deriving Testing Indicator"
+author: "Tim Essam | SI"
+date: "3/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# TODO: FIX SO THIS RUNs Automatically
+source("../Scripts/00_setup.R", local = knitr::knit_global())
+
+
+```
+
+## Positivity
+
+The testing indicators (HTS_TST and HTS_TST_POS) are some of the most commonly viewed indicators. Testing positivity is a common way of measuring the efficiency of testing services. The formal definition of positivity is the percentage of positives found out of those who were tested and received their test results.
+
+$$
+Positivity = \frac{HTS\_TST\_POS}{(HTS\_TST\_POS + HTS\_TST\_NEG)}
+$$
+
+Below, we demonstrate how to manipulate the OU_IM MSD to create a testing positivity column for all operating units by fiscal year.
+
+```{r filter testing}
+df_hts <- df %>% 
+  filter(indicator %in% c("HTS_TST_NEG", "HTS_TST_POS"),
+         standardizeddisaggregate == "Total Numerator") %>% 
+  group_by(operatingunit, fiscal_year, indicator) %>% 
+  summarise(across(matches("cumulative"), sum, na.rm = T)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = indicator,
+              values_from = cumulative) %>% 
+  mutate(positivity = HTS_TST_POS / (HTS_TST_POS + HTS_TST_NEG))
+head(df_hts, n = 10)
+```
+
+EID Positivity
+
+Another way of looking at positivity is for early infant diagnosis. Sometimes we are interested in track the percentage of pregnant women with a known HIV positive status at first antenatal care visit as a share of the overall number of new ANC clients in a reporting period.
+
+$$
+PMTCT\space Positivity = \frac{PMCTC\_STAT\_POS}{(PMTCT\_STAT)}
+$$
+
+```{r pmtct_pos, echo=FALSE}
+df %>% 
+  filter(indicator %in% c("PMTCT_STAT_POS", "PMTCT_STAT"),
+         standardizeddisaggregate %in% c("Total Numerator", "Total Denominator")) %>% 
+  group_by(operatingunit, fiscal_year, indicator) %>% 
+  summarise(across(matches("cumulative"), sum, na.rm = T)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = indicator,
+              values_from = cumulative) %>% 
+  mutate(positivity = HTS_TST_POS / (HTS_TST_POS + HTS_TST_NEG))
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
